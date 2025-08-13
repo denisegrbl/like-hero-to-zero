@@ -16,10 +16,15 @@ public class SecurityConfig {
     SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         http
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/", "/emissions", "/country/**",
-                                "/webjars/**", "/css/**", "/js/**", "/images/**").permitAll()
-                        .requestMatchers("/manage/**").hasAnyRole("SCIENTIST","ADMIN")
-                        .requestMatchers("/admin/**").hasRole("ADMIN")
+                        // öffentlich
+                        .requestMatchers( "/", "/emissions", "/country/**").permitAll()
+                        .requestMatchers("/webjars/**", "/css/**", "/js/**", "/images/**", "/favicon.ico").permitAll()
+                        .requestMatchers("/login", "/logout").permitAll()
+
+                        // getrennt:
+                        .requestMatchers("/manage/**").hasRole("SCIENTIST") // nur Scientists
+                        .requestMatchers("/admin/**").hasRole("ADMIN")      // nur Admins
+
                         .anyRequest().authenticated()
                 )
                 .formLogin(Customizer.withDefaults())  // <-- Standard-Login verwenden

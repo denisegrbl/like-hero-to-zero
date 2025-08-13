@@ -55,9 +55,6 @@
                     <td th:text="${e.year}">2023</td>
                     <td th:text="${#numbers.formatDecimal(e.emissionsKt, 0, 'COMMA', 0, 'POINT')}">620000</td>
                 </tr>
-                <tr th:if="${#lists.isEmpty(latest5)}">
-                    <td colspan="3" class="text-muted">Noch keine Daten vorhanden.</td>
-                </tr>
                 </tbody>
             </table>
         </div>

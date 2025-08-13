@@ -1,5 +1,5 @@
 package com.example.demo.entity;
-
+import java.time.LocalDateTime;
 import jakarta.persistence.*;
 
 @Entity
@@ -19,6 +19,12 @@ public class CountryEmission {
 
     @Column(name="emissions_kt", nullable=false)
     private Double emissionsKt; // CO₂ in Kilotonnen
+
+    @Column(name = "created_at", insertable = false, updatable = false)
+    private LocalDateTime createdAt;
+
+    public LocalDateTime getCreatedAt() { return createdAt; }
+    public void setCreatedAt(LocalDateTime createdAt) { this.createdAt = createdAt; }
 
     public CountryEmission() {}
     public CountryEmission(String country, Integer year, Double emissionsKt) {

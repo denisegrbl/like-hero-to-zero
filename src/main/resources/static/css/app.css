@@ -1,0 +1,28 @@
+:root{
+  --brand:#2e7d32;   /* sattes Grün */
+  --brand-2:#4caf50; /* helleres Grün */
+}
+
+body{ font-family: system-ui, Arial, sans-serif; background:#fff; color:#1b1b1b; }
+.navbar{ background: var(--brand); }
+.navbar a, .navbar-brand{ color:#fff; text-decoration:none; }
+.navbar a:hover{ color:#e8f5e9; }
+.btn-brand{ background:var(--brand); color:#fff; border:none; }
+.btn-brand:hover{ background:var(--brand-2); }
+.hero{
+  background: linear-gradient(0deg, #e8f5e9, #ffffff);
+  border-bottom:1px solid #e0e0e0;
+  padding:2rem 0;
+}
+.card{ border-radius:14px; box-shadow:0 6px 24px rgba(0,0,0,.06); border:1px solid #eaeaea; }
+.table thead th{ background:#e8f5e9; }
+a.link{ color:var(--brand); text-decoration:none; }
+a.link:hover{ text-decoration:underline; }
+.footer{ color:#6b7280; font-size:.9rem; padding:2rem 0; }
+.pager-bar{
+  border-top: 1px solid #eaeaea;
+  margin-top: .5rem;
+  padding-top: .75rem;
+}
+.pager-bar .page-link{ border-radius: 10px; }
+.pager-info{ color:#6b7280; font-size:.95rem; }

@@ -1,10 +1,16 @@
-HELP.md
+# --- Projekt/Build ---
 target/
-.mvn/wrapper/maven-wrapper.jar
+build/
 !**/src/main/**/target/
 !**/src/test/**/target/
+!**/src/main/**/build/
+!**/src/test/**/build/
 
-### STS ###
+# Optional: Maven Wrapper JAR NICHT ignorieren, damit 'mvnw' überall läuft
+# (Wenn du ihn ignorieren willst, Zeile darunter einkommentieren)
+# .mvn/wrapper/maven-wrapper.jar
+
+# Spring Tools Suite (STS)
 .apt_generated
 .classpath
 .factorypath
@@ -13,21 +19,50 @@ target/
 .springBeans
 .sts4-cache
 
-### IntelliJ IDEA ###
+# IntelliJ IDEA
 .idea
 *.iws
 *.iml
 *.ipr
+out/
 
-### NetBeans ###
+# NetBeans
 /nbproject/private/
 /nbbuild/
 /dist/
 /nbdist/
 /.nb-gradle/
-build/
-!**/src/main/**/build/
-!**/src/test/**/build/
 
-### VS Code ###
+# VS Code
 .vscode/
+
+# --- Aus Remote-Teil (allgemeine Java-Ignores) ---
+# Compiled class files
+*.class
+
+# Logs
+*.log
+logs/
+
+# BlueJ files
+*.ctxt
+
+# J2ME temp
+.mtj.tmp/
+
+# Package files
+*.jar
+*.war
+*.nar
+*.ear
+*.zip
+*.tar.gz
+*.rar
+
+# JVM crash logs
+hs_err_pid*
+replay_pid*
+
+# OS/Editor Kram
+.DS_Store
+Thumbs.db

@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html lang="de" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8" />
+    <title>CO₂ Emissions</title>
+</head>
+<body>
+<h1>CO₂ Emissions</h1>
+<table border="1" cellpadding="6">
+    <thead>
+    <tr><th>Country</th><th>Year</th><th>Emissions (kt)</th></tr>
+    </thead>
+    <tbody>
+    <tr th:each="e : ${emissions}">
+        <td th:text="${e.country}">Country</td>
+        <td th:text="${e.year}">Year</td>
+        <td th:text="${e.emissionsKt}">0</td>
+    </tr>
+    </tbody>
+</table>
+</body>
+</html>

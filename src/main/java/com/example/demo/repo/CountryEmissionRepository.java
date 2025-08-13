@@ -20,7 +20,7 @@ public interface CountryEmissionRepository extends JpaRepository<CountryEmission
 
     List<CountryEmission> findTop5ByOrderByCreatedAtDesc();
 
-    Page<CountryEmission> findAllByOrderByCountryAscYearDesc(Pageable pageable);
+    Page<CountryEmission> findByCreatedByOrderByCountryAscYearDesc(String createdBy, Pageable pageable);
 
     @Query("select distinct c.country from CountryEmission c order by c.country asc")
     List<String> findDistinctCountries();

@@ -26,3 +26,10 @@ a.link:hover{ text-decoration:underline; }
 }
 .pager-bar .page-link{ border-radius: 10px; }
 .pager-info{ color:#6b7280; font-size:.95rem; }
+:root { --brand:#2e7d32; }
+.navbar { background: var(--brand); }
+.btn-brand{ background: var(--brand); color:#fff; border:0; }
+.btn-brand:hover{ filter:brightness(.95); }
+.hero{ padding:2rem 0; }
+.pager-bar{ border-top:1px solid #eaeaea; margin-top:.5rem; padding-top:.75rem; }
+.pager-info{ color:#6b7280; font-size:.95rem; }

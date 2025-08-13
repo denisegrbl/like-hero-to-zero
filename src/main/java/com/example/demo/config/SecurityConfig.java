@@ -16,21 +16,23 @@ public class SecurityConfig {
     SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         http
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/", "/emissions", "/country/**",
-                                "/css/**", "/js/**", "/images/**").permitAll()
-                        .requestMatchers("/admin/**").hasRole("ADMIN")
+                        .requestMatchers(
+                                "/", "/emissions", "/country/**",
+                                "/webjars/**", "/css/**", "/js/**", "/images/**"
+                        ).permitAll()
                         .requestMatchers("/manage/**").hasAnyRole("SCIENTIST","ADMIN")
+                        .requestMatchers("/admin/**").hasRole("ADMIN")
                         .anyRequest().authenticated()
                 )
-                .formLogin(Customizer.withDefaults())
+                .formLogin(form -> form.loginPage("/login").permitAll()) // eigene Login-Seite (optional)
                 .logout(l -> l.logoutSuccessUrl("/").permitAll());
         return http.build();
     }
 
+
     @Bean
     UserDetailsService users() {
         return new InMemoryUserDetailsManager(
-                // nur DEV-Zugänge – in Produktion DB-User verwenden
                 User.withUsername("admin").password("{noop}admin123").roles("ADMIN").build(),
                 User.withUsername("sci").password("{noop}sci123").roles("SCIENTIST").build()
         );

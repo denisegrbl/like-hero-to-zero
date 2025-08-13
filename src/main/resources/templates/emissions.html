@@ -16,21 +16,26 @@
             <a class="btn btn-outline-light" href="/country">Mein Land</a>
             <a class="btn btn-outline-light" href="/emissions">Alle Daten</a>
             <a class="btn btn-outline-light" href="/login" sec:authorize="!isAuthenticated()">Login</a>
-            <a class="btn btn-outline-light" href="/manage/emissions" sec:authorize="hasAnyRole('SCIENTIST','ADMIN')">Verwalten</a>
+            <!-- Scientist sieht 'Verwalten' -->
+            <a class="btn btn-outline-light" href="/manage/emissions" sec:authorize="hasRole('SCIENTIST')">
+                Verwalten
+            </a>
+
+            <!-- Admin sieht 'Moderation' -->
+            <a class="btn btn-outline-light" href="/admin/moderation" sec:authorize="hasRole('ADMIN')">
+                Moderation
+            </a>
             <a class="btn btn-outline-light" href="/logout" sec:authorize="isAuthenticated()">Logout</a>
         </div>
     </div>
 </nav>
-
-<<div class="container mb-3">
+<div class="container mb-3">
     <form class="row g-2 justify-content-center" method="get" th:action="@{/emissions}">
-        <div class="col-md-5 col-sm-12">
-            <input class="form-control" type="text" name="q"
-                   placeholder="Land suchen…" th:value="${q}">
+        <div class="col-md-6 col-sm-12">
+            <input class="form-control" type="text" name="q" placeholder="Land suchen…" th:value="${q}">
         </div>
         <div class="col-md-2 col-sm-6">
-            <input class="form-control" type="number" name="size"
-                   min="5" max="100" th:value="${size}">
+            <input class="form-control" type="number" name="size" min="5" max="100" th:value="${size}">
         </div>
         <div class="col-md-2 col-sm-6 d-grid">
             <button class="btn btn-brand" type="submit">Filtern</button>

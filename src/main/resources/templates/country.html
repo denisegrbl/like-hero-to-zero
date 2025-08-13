@@ -16,7 +16,15 @@
             <a class="btn btn-outline-light" href="/country">Mein Land</a>
             <a class="btn btn-outline-light" href="/emissions">Alle Daten</a>
             <a class="btn btn-outline-light" href="/login" sec:authorize="!isAuthenticated()">Login</a>
-            <a class="btn btn-outline-light" href="/manage/emissions" sec:authorize="hasAnyRole('SCIENTIST','ADMIN')">Verwalten</a>
+            <!-- Scientist sieht 'Verwalten' -->
+            <a class="btn btn-outline-light" href="/manage/emissions" sec:authorize="hasRole('SCIENTIST')">
+                Verwalten
+            </a>
+
+            <!-- Admin sieht 'Moderation' -->
+            <a class="btn btn-outline-light" href="/admin/moderation" sec:authorize="hasRole('ADMIN')">
+                Moderation
+            </a>
             <a class="btn btn-outline-light" href="/logout" sec:authorize="isAuthenticated()">Logout</a>
         </div>
     </div>

@@ -38,7 +38,7 @@ public class AdminModerationController {
                 ? repo.findByStatusOrderByCountryAscYearDesc("APPROVED", pageableA)
                 : repo.findByStatusAndCountryContainingIgnoreCase("APPROVED", q.trim(), pageableA);
 
-        model.addAttribute("q", q == null ? "" : q);
+        model.addAttribute("q", q == null ? "" : q.trim());
         model.addAttribute("pPending", pending);
         model.addAttribute("pApproved", approved);
         model.addAttribute("listPending", pending.getContent());

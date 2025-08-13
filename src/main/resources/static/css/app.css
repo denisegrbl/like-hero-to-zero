@@ -33,3 +33,15 @@ a.link:hover{ text-decoration:underline; }
 .hero{ padding:2rem 0; }
 .pager-bar{ border-top:1px solid #eaeaea; margin-top:.5rem; padding-top:.75rem; }
 .pager-info{ color:#6b7280; font-size:.95rem; }
+/* kompakte, zentrierte Paginierung */
+.pager-wrap{display:flex;justify-content:center;padding:.75rem 0}
+.pagination{flex-wrap:wrap;gap:4px;margin-bottom:0}
+.pagination .page-link{min-width:40px;text-align:center;padding:.375rem .5rem}
+
+/* kompakte Suchleiste */
+.input-group .form-control{height:42px}
+.btn-brand{background:#2e7d32;border-color:#2e7d32;color:#fff}
+.btn-brand:hover{filter:brightness(0.95);color:#fff}
+.pager-wrap{display:flex;justify-content:center;padding:.75rem 0}
+.pagination{flex-wrap:wrap;gap:4px;margin-bottom:0}
+.pagination .page-link{min-width:40px;text-align:center;padding:.375rem .5rem}

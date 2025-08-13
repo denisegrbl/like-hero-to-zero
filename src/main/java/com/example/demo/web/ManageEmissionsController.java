@@ -29,22 +29,53 @@ public class ManageEmissionsController {
     }
 
     @GetMapping
-    public String list(@RequestParam(defaultValue = "0") int page,
+    public String list(@RequestParam(defaultValue = "0", name="pageP") int pagePending,
+                       @RequestParam(defaultValue = "0", name="pageA") int pageApproved,
                        @RequestParam(defaultValue = "20") int size,
+                       @RequestParam(name="q", required = false) String q,
                        Model model) {
-        var pageable = PageRequest.of(page, size,
-                Sort.by("country").ascending().and(Sort.by("year").descending()));
 
-        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        var auth = org.springframework.security.core.context.SecurityContextHolder.getContext().getAuthentication();
+        boolean isAdmin = auth.getAuthorities().stream().anyMatch(a -> a.getAuthority().equals("ROLE_ADMIN"));
+        String owner = auth.getName();
+        String query = (q == null) ? "" : q.trim();
 
-        Page<CountryEmission> p = isAdmin(auth)
-                ? repo.findAll(pageable) // Admin sieht alles
-                : repo.findByCreatedByOrderByCountryAscYearDesc(auth.getName(), pageable); // Scientist: nur eigene
+        var sort = org.springframework.data.domain.Sort.by("country").ascending()
+                .and(org.springframework.data.domain.Sort.by("year").descending());
+        var pageableP = org.springframework.data.domain.PageRequest.of(pagePending, size, sort);
+        var pageableA = org.springframework.data.domain.PageRequest.of(pageApproved, size, sort);
 
-        model.addAttribute("page", p);
-        model.addAttribute("content", p.getContent());
-        model.addAttribute("owner", auth.getName());
-        model.addAttribute("isAdmin", isAdmin(auth));
+        org.springframework.data.domain.Page<com.example.demo.entity.CountryEmission> pPending, pApproved;
+
+        if (isAdmin) {
+            pPending = query.isEmpty()
+                    ? repo.findByStatusOrderByCountryAscYearDesc("PENDING", pageableP)
+                    : repo.findByStatusAndCountryContainingIgnoreCase("PENDING", query, pageableP);
+
+            pApproved = query.isEmpty()
+                    ? repo.findByStatusOrderByCountryAscYearDesc("APPROVED", pageableA)
+                    : repo.findByStatusAndCountryContainingIgnoreCase("APPROVED", query, pageableA);
+        } else {
+            pPending = query.isEmpty()
+                    ? repo.findByCreatedByAndStatusOrderByCountryAscYearDesc(owner, "PENDING", pageableP)
+                    : repo.findByCreatedByAndStatusAndCountryContainingIgnoreCase(owner, "PENDING", query, pageableP);
+
+            pApproved = query.isEmpty()
+                    ? repo.findByCreatedByAndStatusOrderByCountryAscYearDesc(owner, "APPROVED", pageableA)
+                    : repo.findByCreatedByAndStatusAndCountryContainingIgnoreCase(owner, "APPROVED", query, pageableA);
+        }
+
+        model.addAttribute("q", q);
+        model.addAttribute("size", size);
+        model.addAttribute("pageP", pagePending);
+        model.addAttribute("pageA", pageApproved);
+        model.addAttribute("isAdmin", isAdmin);
+
+        model.addAttribute("pPending", pPending);
+        model.addAttribute("pApproved", pApproved);
+        model.addAttribute("listPending", pPending.getContent());
+        model.addAttribute("listApproved", pApproved.getContent());
+
         return "manage/list";
     }
 
@@ -58,8 +89,10 @@ public class ManageEmissionsController {
     public String create(@Valid @ModelAttribute("emission") CountryEmission emission,
                          BindingResult binding) {
         if (binding.hasErrors()) return "manage/form";
-        var auth = SecurityContextHolder.getContext().getAuthentication();
-        emission.setCreatedBy(auth.getName());          // ← Owner setzen
+
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        emission.setCreatedBy(auth.getName());
+        emission.setStatus("PENDING");   // NEU immer PENDING
         repo.save(emission);
         return "redirect:/manage/emissions";
     }
@@ -78,20 +111,28 @@ public class ManageEmissionsController {
     @PostMapping("/{id}")
     public String update(@PathVariable Long id,
                          @Valid @ModelAttribute("emission") CountryEmission form,
-                         BindingResult binding) {
+                         org.springframework.validation.BindingResult binding) {
         if (binding.hasErrors()) return "manage/form";
+        var auth = org.springframework.security.core.context.SecurityContextHolder.getContext().getAuthentication();
+        boolean admin = auth.getAuthorities().stream().anyMatch(a -> a.getAuthority().equals("ROLE_ADMIN"));
+
         var e = repo.findById(id).orElseThrow();
-        var auth = SecurityContextHolder.getContext().getAuthentication();
-        if (!isAdmin(auth) && (e.getCreatedBy() == null || !e.getCreatedBy().equals(auth.getName()))) {
-            throw new AccessDeniedException("Kein Zugriff auf fremde Datensätze");
+
+        if (!admin) {
+            if (e.getCreatedBy() == null || !e.getCreatedBy().equals(auth.getName()))
+                throw new org.springframework.security.access.AccessDeniedException("Kein Zugriff");
         }
+
         e.setCountry(form.getCountry());
         e.setYear(form.getYear());
         e.setEmissionsKt(form.getEmissionsKt());
+
+        if (!admin) {
+            e.setStatus("PENDING");  // Scientist-Edit ⇒ wieder PENDING
+        }
         repo.save(e);
         return "redirect:/manage/emissions";
     }
-
     @PostMapping("/{id}/delete")
     public String delete(@PathVariable Long id) {
         var e = repo.findById(id).orElseThrow();
@@ -102,4 +143,5 @@ public class ManageEmissionsController {
         repo.delete(e);
         return "redirect:/manage/emissions";
     }
+
 }

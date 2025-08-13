@@ -1,106 +1,259 @@
 <!DOCTYPE html>
-<html lang="de" xmlns:th="http://www.thymeleaf.org" xmlns:sec="https://www.thymeleaf.org/extras/spring-security">
+<html lang="de" xmlns:th="http://www.thymeleaf.org">
 <head>
-    <meta charset="UTF-8"/>
-    <title>Datensätze verwalten</title>
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css">
-    <link rel="stylesheet" href="/css/app.css"/>
+    <meta charset="UTF-8">
+    <title>Verwaltung – Emissionen</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link th:href="@{/webjars/bootstrap/css/bootstrap.min.css}" rel="stylesheet">
+    <link th:href="@{/css/app.css}" rel="stylesheet">
+    <style>
+        .badge { font-size: .85rem; }
+        .table td, .table th { vertical-align: middle; }
+        .card-header-actions { gap: .5rem; }
+    </style>
 </head>
 <body>
 <nav class="navbar mb-3">
     <div class="container">
-        <a class="navbar-brand fw-bold" href="/">Like Hero To Zero</a>
+        <a class="navbar-brand fw-bold text-white" href="/">Like Hero To Zero</a>
         <div class="ms-auto d-flex gap-2">
-            <a class="btn btn-outline-light" href="/emissions">Öffentliche Daten</a>
-            <a class="btn btn-outline-light" href="/logout" sec:authorize="isAuthenticated()">Logout</a>
+            <a class="btn btn-outline-light" href="/logout">Logout</a>
         </div>
     </div>
 </nav>
 
 <div class="container">
-    <p class="text-muted mb-2" th:if="${!isAdmin}">
-        Eingeloggt als <strong th:text="${owner}">user</strong> · es werden nur deine eigenen Datensätze angezeigt.
-    </p>
-
-    <div class="d-flex justify-content-between align-items-center mb-3">
-        <h2 class="mb-0" style="color:#2e7d32;">Datensätze verwalten</h2>
-        <a class="btn btn-brand" href="/manage/emissions/new">+ Neuer Datensatz</a>
+    <div class="d-flex flex-column flex-md-row align-items-md-center justify-content-between mb-3 gap-2">
+        <h2 class="mb-0" style="color:#2e7d32;">Verwaltung</h2>
+        <div class="d-flex gap-2">
+            <a class="btn btn-outline-secondary" href="/">← Zur Startseite</a>
+            <a class="btn btn-brand" href="/manage/emissions/new">+ Neuer Datensatz</a>
+        </div>
     </div>
 
-    <div class="card p-3">
-        <div class="table-responsive">
-            <table class="table table-hover align-middle">
-                <thead>
-                <tr><th>Land</th><th>Jahr</th><th>CO₂ (kt)</th><th style="width:160px;">Aktionen</th></tr>
-                </thead>
-                <tbody>
-                <tr th:each="e : ${content}">
-                    <td th:text="${e.country}">Germany</td>
-                    <td th:text="${e.year}">2023</td>
-                    <td th:text="${#numbers.formatDecimal(e.emissionsKt, 0, 'COMMA', 0, 'POINT')}">0</td>
-                    <td class="d-flex gap-2">
-                        <a class="btn btn-sm btn-outline-secondary" th:href="@{|/manage/emissions/${e.id}/edit|}">✏️ Bearbeiten</a>
-                        <form th:action="@{|/manage/emissions/${e.id}/delete|}" method="post"
-                              onsubmit="return confirm('Wirklich löschen?');">
-                            <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}">
-                            <button class="btn btn-sm btn-outline-danger" type="submit">🗑️ Löschen</button>
-                        </form>
-                    </td>
-                </tr>
-                <tr th:if="${#lists.isEmpty(content)}">
-                    <td colspan="4" class="text-muted">Noch keine Daten.</td>
-                </tr>
-                </tbody>
-            </table>
+    <!-- Suche global für beide Listen -->
+    <form class="row g-2 mb-3" method="get" action="/manage/emissions">
+        <div class="col-md-8">
+            <input class="form-control" type="text" name="q" placeholder="Land suchen…" th:value="${q}">
+        </div>
+        <div class="col-md-2">
+            <input class="form-control" type="number" name="size" min="5" max="100" th:value="${size}">
+        </div>
+        <div class="col-md-2 d-grid">
+            <button class="btn btn-brand" type="submit">Filtern</button>
+        </div>
+    </form>
+
+    <!-- Hinweis für Scientists -->
+    <div class="alert alert-info" th:if="${!isAdmin}">
+        Hinweis: Neue oder bearbeitete Datensätze stehen zunächst auf <strong>PENDING</strong> und werden erst nach Freigabe sichtbar.
+    </div>
+
+    <!-- PENDING -->
+    <div class="card mb-4">
+        <div class="card-header d-flex justify-content-between align-items-center">
+            <h5 class="mb-0">Ausstehend (PENDING)</h5>
+            <div class="card-header-actions text-muted small">
+                Seite <span th:text="${pPending.number + 1}">1</span> / <span th:text="${pPending.totalPages}">1</span>
+            </div>
+        </div>
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <thead class="table-light">
+                    <tr>
+                        <th>Status</th>
+                        <th>Land</th>
+                        <th style="width:120px;">Jahr</th>
+                        <th style="width:180px;">CO₂ (kt)</th>
+                        <th th:if="${isAdmin}">Erstellt von</th>
+                        <th style="width:280px;">Aktionen</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    <tr th:each="e : ${listPending}">
+                        <td><span class="badge text-bg-warning" th:text="${e.status}">PENDING</span></td>
+                        <td th:text="${e.country}">Germany</td>
+                        <td th:text="${e.year}">2023</td>
+                        <td th:text="${#numbers.formatDecimal(e.emissionsKt,0,'COMMA',0,'POINT')}">0</td>
+                        <td th:if="${isAdmin}" th:text="${e.createdBy}">sci</td>
+                        <td class="d-flex flex-wrap gap-2">
+                            <a class="btn btn-sm btn-outline-secondary" th:href="@{|/manage/emissions/${e.id}/edit|}">Bearbeiten</a>
+
+                            <!-- Admin-Moderation -->
+                            <form th:if="${isAdmin}" th:action="@{|/manage/emissions/${e.id}/approve|}" method="post" class="d-inline">
+                                <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}">
+                                <input type="hidden" name="q" th:value="${q}">
+                                <input type="hidden" name="size" th:value="${size}">
+                                <input type="hidden" name="pageP" th:value="${pPending.number}">
+                                <input type="hidden" name="pageA" th:value="${pApproved.number}">
+                                <button class="btn btn-sm btn-success" type="submit">Freigeben</button>
+                            </form>
+                            <form th:if="${isAdmin}" th:action="@{|/manage/emissions/${e.id}/reject|}" method="post"
+                                  class="d-inline" onsubmit="return confirm('Wirklich ablehnen?');">
+                                <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}">
+                                <input type="hidden" name="q" th:value="${q}">
+                                <input type="hidden" name="size" th:value="${size}">
+                                <input type="hidden" name="pageP" th:value="${pPending.number}">
+                                <input type="hidden" name="pageA" th:value="${pApproved.number}">
+                                <button class="btn btn-sm btn-outline-danger" type="submit">Ablehnen</button>
+                            </form>
+
+                            <!-- Optional: Löschen -->
+                            <form th:action="@{|/manage/emissions/${e.id}/delete|}" method="post" class="d-inline"
+                                  onsubmit="return confirm('Datensatz löschen?');">
+                                <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}">
+                                <button class="btn btn-sm btn-outline-danger" type="submit">Löschen</button>
+                            </form>
+                        </td>
+                    </tr>
+                    <tr th:if="${#lists.isEmpty(listPending)}">
+                        <td colspan="6" class="text-muted">Keine ausstehenden Datensätze.</td>
+                    </tr>
+                    </tbody>
+                </table>
+            </div>
         </div>
 
-        <!-- Pagination (hübsch, unter der Tabelle) -->
-        <div class="pager-bar" th:if="${page != null and page.totalPages > 1}"
-             th:with="total=${page.totalPages}, current=${page.number},
-                  start=${current > 2 ? current - 2 : 0},
-                  end=${current + 2 < total - 1 ? current + 2 : total - 1}">
-            <div class="d-flex flex-column flex-md-row align-items-center justify-content-between gap-2">
-                <div class="pager-info">
-                    Seite <span th:text="${current + 1}">1</span> von <span th:text="${total}">5</span> ·
-                    Einträge pro Seite: <span th:text="${page.size}">20</span> ·
-                    Gesamt: <span th:text="${page.totalElements}">0</span>
-                </div>
-                <nav aria-label="Seiten-Navigation">
-                    <ul class="pagination mb-0">
-                        <li class="page-item" th:classappend="${page.first} ? 'disabled'">
-                            <a class="page-link" th:href="@{|/manage/emissions?page=${current-1}&size=${page.size}|}">«</a>
-                        </li>
+        <!-- Pagination PENDING -->
+        <!-- Pagination PENDING -->
+        <div class="pager-wrap" th:if="${pPending != null and pPending.totalPages > 1}"
+             th:with="total=${pPending.totalPages}, current=${pPending.number},
+              start=${current > 2 ? current - 2 : 0},
+              end=${current + 2 < total - 1 ? current + 2 : total - 1}">
+            <ul class="pagination">
+                <!-- Prev -->
+                <li class="page-item" th:classappend="${pPending.first} ? 'disabled'">
+                    <a class="page-link"
+                       th:href="@{|/admin/moderation?pageP=${current-1}&pageA=${pApproved != null ? pApproved.number : 0}&size=${size}&q=${q}|}">«</a>
+                </li>
 
-                        <li class="page-item" th:classappend="${current==0} ? 'active'">
-                            <a class="page-link" th:href="@{|/manage/emissions?page=0&size=${page.size}|}">1</a>
-                        </li>
+                <!-- 1 + … -->
+                <li class="page-item" th:if="${current > 3}">
+                    <a class="page-link"
+                       th:href="@{|/admin/moderation?pageP=0&pageA=${pApproved != null ? pApproved.number : 0}&size=${size}&q=${q}|}">1</a>
+                </li>
+                <li class="page-item disabled" th:if="${current > 4}">
+                    <span class="page-link">…</span>
+                </li>
 
-                        <li class="page-item disabled" th:if="${start > 1}">
-                            <span class="page-link">…</span>
-                        </li>
+                <!-- Fenster -->
+                <li class="page-item"
+                    th:each="i : ${#numbers.sequence(start > 1 ? start : 1, end)}"
+                    th:classappend="${i==current} ? 'active'">
+                    <a class="page-link" th:text="${i+1}"
+                       th:href="@{|/admin/moderation?pageP=${i}&pageA=${pApproved != null ? pApproved.number : 0}&size=${size}&q=${q}|}">2</a>
+                </li>
 
-                        <li class="page-item"
-                            th:each="i : ${#numbers.sequence(start > 1 ? start : 1, end)}"
-                            th:classappend="${i==current} ? 'active'">
-                            <a class="page-link" th:text="${i + 1}"
-                               th:href="@{|/manage/emissions?page=${i}&size=${page.size}|}">2</a>
-                        </li>
+                <!-- … + letzte -->
+                <li class="page-item disabled" th:if="${end < total - 2}">
+                    <span class="page-link">…</span>
+                </li>
+                <li class="page-item" th:if="${total > 1}" th:classappend="${current==total-1} ? 'active'">
+                    <a class="page-link" th:text="${total}"
+                       th:href="@{|/admin/moderation?pageP=${total-1}&pageA=${pApproved != null ? pApproved.number : 0}&size=${size}&q=${q}|}">99</a>
+                </li>
 
-                        <li class="page-item disabled" th:if="${end < total - 2}">
-                            <span class="page-link">…</span>
-                        </li>
+                <!-- Next -->
+                <li class="page-item" th:classappend="${pPending.last} ? 'disabled'">
+                    <a class="page-link"
+                       th:href="@{|/admin/moderation?pageP=${current+1}&pageA=${pApproved != null ? pApproved.number : 0}&size=${size}&q=${q}|}">»</a>
+                </li>
+            </ul>
+        </div>
 
-                        <li class="page-item" th:if="${total > 1}" th:classappend="${current==total-1} ? 'active'">
-                            <a class="page-link" th:text="${total}"
-                               th:href="@{|/manage/emissions?page=${total-1}&size=${page.size}|}">99</a>
-                        </li>
+    </div>
 
-                        <li class="page-item" th:classappend="${page.last} ? 'disabled'">
-                            <a class="page-link" th:href="@{|/manage/emissions?page=${current+1}&size=${page.size}|}">»</a>
-                        </li>
-                    </ul>
-                </nav>
+    <!-- APPROVED -->
+    <div class="card">
+        <div class="card-header d-flex justify-content-between align-items-center">
+            <h5 class="mb-0">Freigegeben (APPROVED)</h5>
+            <div class="card-header-actions text-muted small">
+                Seite <span th:text="${pApproved.number + 1}">1</span> / <span th:text="${pApproved.totalPages}">1</span>
             </div>
+        </div>
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <thead class="table-light">
+                    <tr>
+                        <th>Status</th>
+                        <th>Land</th>
+                        <th style="width:120px;">Jahr</th>
+                        <th style="width:180px;">CO₂ (kt)</th>
+                        <th th:if="${isAdmin}">Erstellt von</th>
+                        <th style="width:200px;">Aktionen</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    <tr th:each="e : ${listApproved}">
+                        <td><span class="badge text-bg-success" th:text="${e.status}">APPROVED</span></td>
+                        <td th:text="${e.country}">Germany</td>
+                        <td th:text="${e.year}">2023</td>
+                        <td th:text="${#numbers.formatDecimal(e.emissionsKt,0,'COMMA',0,'POINT')}">0</td>
+                        <td th:if="${isAdmin}" th:text="${e.createdBy}">admin/CSV</td>
+                        <td class="d-flex flex-wrap gap-2">
+                            <a class="btn btn-sm btn-outline-secondary" th:href="@{|/manage/emissions/${e.id}/edit|}">Bearbeiten</a>
+                            <form th:action="@{|/manage/emissions/${e.id}/delete|}" method="post" class="d-inline"
+                                  onsubmit="return confirm('Datensatz löschen?');">
+                                <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}">
+                                <button class="btn btn-sm btn-outline-danger" type="submit">Löschen</button>
+                            </form>
+                        </td>
+                    </tr>
+                    <tr th:if="${#lists.isEmpty(listApproved)}">
+                        <td colspan="6" class="text-muted">Noch keine freigegebenen Datensätze.</td>
+                    </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Pagination APPROVED -->
+        <div class="pager-wrap" th:if="${pApproved != null and pApproved.totalPages > 1}"
+             th:with="total=${pApproved.totalPages}, current=${pApproved.number},
+              start=${current > 2 ? current - 2 : 0},
+              end=${current + 2 < total - 1 ? current + 2 : total - 1}">
+            <ul class="pagination">
+                <!-- Prev -->
+                <li class="page-item" th:classappend="${pApproved.first} ? 'disabled'">
+                    <a class="page-link"
+                       th:href="@{|/admin/moderation?pageP=${pPending != null ? pPending.number : 0}&pageA=${current-1}&size=${size}&q=${q}|}">«</a>
+                </li>
+
+                <!-- 1 + … -->
+                <li class="page-item" th:if="${current > 3}">
+                    <a class="page-link"
+                       th:href="@{|/admin/moderation?pageP=${pPending != null ? pPending.number : 0}&pageA=0&size=${size}&q=${q}|}">1</a>
+                </li>
+                <li class="page-item disabled" th:if="${current > 4}">
+                    <span class="page-link">…</span>
+                </li>
+
+                <!-- Fenster -->
+                <li class="page-item"
+                    th:each="i : ${#numbers.sequence(start > 1 ? start : 1, end)}"
+                    th:classappend="${i==current} ? 'active'">
+                    <a class="page-link" th:text="${i+1}"
+                       th:href="@{|/admin/moderation?pageP=${pPending != null ? pPending.number : 0}&pageA=${i}&size=${size}&q=${q}|}">2</a>
+                </li>
+
+                <!-- … + letzte -->
+                <li class="page-item disabled" th:if="${end < total - 2}">
+                    <span class="page-link">…</span>
+                </li>
+                <li class="page-item" th:if="${total > 1}" th:classappend="${current==total-1} ? 'active'">
+                    <a class="page-link" th:text="${total}"
+                       th:href="@{|/admin/moderation?pageP=${pPending != null ? pPending.number : 0}&pageA=${total-1}&size=${size}&q=${q}|}">99</a>
+                </li>
+
+                <!-- Next -->
+                <li class="page-item" th:classappend="${pApproved.last} ? 'disabled'">
+                    <a class="page-link"
+                       th:href="@{|/admin/moderation?pageP=${pPending != null ? pPending.number : 0}&pageA=${current+1}&size=${size}&q=${q}|}">»</a>
+                </li>
+            </ul>
+        </div>
         </div>
     </div>
 </div>

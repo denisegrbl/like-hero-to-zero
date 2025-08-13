@@ -16,15 +16,13 @@ public class SecurityConfig {
     SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         http
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers(
-                                "/", "/emissions", "/country/**",
-                                "/webjars/**", "/css/**", "/js/**", "/images/**"
-                        ).permitAll()
+                        .requestMatchers("/", "/emissions", "/country/**",
+                                "/webjars/**", "/css/**", "/js/**", "/images/**").permitAll()
                         .requestMatchers("/manage/**").hasAnyRole("SCIENTIST","ADMIN")
                         .requestMatchers("/admin/**").hasRole("ADMIN")
                         .anyRequest().authenticated()
                 )
-                .formLogin(form -> form.loginPage("/login").permitAll()) // eigene Login-Seite (optional)
+                .formLogin(Customizer.withDefaults())  // <-- Standard-Login verwenden
                 .logout(l -> l.logoutSuccessUrl("/").permitAll());
         return http.build();
     }

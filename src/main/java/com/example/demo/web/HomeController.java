@@ -16,7 +16,17 @@ public class HomeController {
 
     @GetMapping("/")
     public String index(Model model) {
-        model.addAttribute("latest5", repo.findTop5ByOrderByCreatedAtDesc());
+        // Neueste 10 nach Jahr (und Land als Zweitsortierung, damit die Reihenfolge stabil ist)
+        var p = repo.findByStatus(
+                "APPROVED",
+                org.springframework.data.domain.PageRequest.of(
+                        0, 10,
+                        org.springframework.data.domain.Sort.by("year").descending()
+                                .and(org.springframework.data.domain.Sort.by("country").ascending())
+                )
+        );
+        model.addAttribute("latest10", p.getContent());
         return "index";
     }
+
 }
